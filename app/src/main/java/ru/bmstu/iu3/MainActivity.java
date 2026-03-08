@@ -1,7 +1,14 @@
 package ru.bmstu.iu3;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.view.View;
@@ -18,6 +25,7 @@ import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
+    ActivityResultLauncher<Intent> activityResultLauncher;
     // Used to load the 'iu3' library on application startup.
     static {
         System.loadLibrary("mbedcrypto");
@@ -56,6 +64,19 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i("fclient_ndk", "3des ok=" + Arrays.equals(msg, dec));
 
+        activityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                            String pin = result.getData().getStringExtra("pin");
+                            Toast.makeText(MainActivity.this, pin + " Woof!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+        );
+
     }
 
     /**
@@ -85,11 +106,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void onButtonClick(View v)
     {
-        byte[] key = stringToHex("0123456789ABCDEF0123456789ABCDE0");
-        byte[] enc = encrypt(key, stringToHex("000000000000000102"));
-        byte[] dec = decrypt(key, enc);
-        String s = new String(Hex.encodeHex(dec)).toUpperCase();
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+        Intent it = new Intent(this, PinpadActivity.class);
+        //startActivity(it);
+        activityResultLauncher.launch(it);
     }
 
 }
